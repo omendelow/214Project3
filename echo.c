@@ -166,6 +166,7 @@ int server(char *port)
 
 	puts("No longer listening.");
 	pthread_detach(pthread_self());
+	exit(EXIT_SUCCESS);
 	pthread_exit(NULL);
 
 	// never reach here
@@ -194,15 +195,101 @@ void *echo(void *arg)
 	}
 
 	printf("[%s:%s] connection\n", host, port);
-
+	char request_code[4] = "";
+	int request_length = 0;
+	char key[100] = "";
+	char value[100] = "";
+	char curr_char;
+	int is_key = 1;
+	int i;
+	int counter = 0;
 	while ((nread = read(c->fd, buf, BUFSIZE)) > 0) {
+		counter++;
 		buf[nread] = '\0';
-		printf("[%s:%s] read %d bytes |%s|\n", host, port, nread, buf);
+		// check if first iteration
+		if (counter == 1)
+		{
+			if (nread < 8)
+			{
+				// not enough characters pass to fill a complete command
+				printf("error- invalid argument from client\n");
+				close(c->fd);
+				free(c);
+				return NULL;
+			}
+
+			// store request code
+			strncpy(request_code, buf, 3);
+			request_code[3] = '\0'; //string must end in terminator
+
+			// next let's get the request legth
+			i = 4; // request codes are always 3 chars long, +1 for \n and we want to begin after that
+			char request_length_str[10];
+			curr_char = buf[i];
+			while (curr_char != '\n' && i < BUFSIZE)
+			{
+				i++;
+				request_length_str[strlen(request_length_str)] = curr_char;
+				curr_char = buf[i];
+			}
+			request_length_str[strlen(request_length_str)] = '\0';
+			request_length = atoi(request_length_str);
+		}
+		if (i > 0) i++; // skip the \n
+		if (i >= nread)
+		{
+			continue;
+		}
+		for (; i < nread; i++)
+		{
+			curr_char = buf[i];
+			if (curr_char == '\n')
+			{
+				if (is_key == 0 || (strcmp(request_code, "DEL") == 0) || (strcmp(request_code, "GET") == 0))
+				{
+					// we've reached the end of the request
+					counter = 0;
+					// send the request away!
+					printf("request code: %s\n", request_code);
+					printf("request length: %d\n", request_length);
+					printf("key: %s\n", key);
+					printf("value: %s\n", value);
+					break;
+				}
+				else
+				{
+					is_key = 0;
+				}
+				i++;
+			}
+			if (is_key == 1)
+			{
+				strncat(key, &buf[i], 1);
+			}
+			else
+			{
+				strncat(value, &buf[i], 1);
+			}
+		}
+		i = 0;
+		/*
+		if (nread < BUFSIZE && request_length == 0)
+		{
+			//err
+			printf("error- invalid argument from client\n");
+			close(c->fd);
+			free(c);
+			return NULL;
+		}
+		*/
+
+		//printf("%s\n", buf);
 	}
 
 	printf("[%s:%s] got EOF\n", host, port);
 
 	close(c->fd);
 	free(c);
+	exit(EXIT_SUCCESS);
 	return NULL;
 }

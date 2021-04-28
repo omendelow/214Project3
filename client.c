@@ -71,12 +71,19 @@ int main(int argc, char **argv)
 	// now that we have connected, we don't need the addressinfo list, so free it
 	freeaddrinfo(info_list);
 
+
+	char* message = "SET\n11\nday\nSunday\n";
+
+	write(sock,message,strlen(message));
+
+	/*
 	// send the remaining messages to the remote host
 	for (i = 3; i < argc; ++i) {
 		write(sock, argv[i], strlen(argv[i]));
 		sleep(5);
 			// wait 50ms between writes, just to make things interesting
 	}
+	*/
 	
 	// close the socket
 	close(sock);
