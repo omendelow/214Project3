@@ -160,9 +160,51 @@ void print_list()
 	}
 }
 
+char* process_arg(char* request_code, int request_length, char* key, char* value)
+{
+	if (strcmp(request_code, "SET") == 0)
+	{
+		set(key, value);
+		return "OKS\n";
+	}
+	else if (strcmp(request_code, "GET") == 0)
+	{
+		char* value = get(key);
+		if (value == NULL) return "KNF\n";
+		else
+		{
+			char* to_return = malloc(sizeof(char) * 1024);
+			snprintf(to_return, 1024, "OKG\n%d\n%s\n", (int)strlen(value)+1, value);
+			return to_return;
+		}
+	}
+	else if (strcmp(request_code, "DEL") == 0)
+	{
+		char* value = get(key);
+		if (value == NULL) return "KNF\n";
+		else
+		{
+			char* to_return = malloc(sizeof(char) * 1024);
+			snprintf(to_return, 1024, "OKD\n%d\n%s\n", (int)strlen(value)+1, value);
+			return to_return;
+		}
+	}
+	else
+	{
+		// invalid request
+		return "ERR\nBAD\n";
+	}
+}
+
 int main(int argc, char **argv)
 {
-	
+	printf("%s", process_arg("SET", 0, "apple", "blue"));
+	printf("%s", process_arg("SET", 0, "orange", "peel me!"));
+	printf("%s", process_arg("GET", 0, "banana", ""));
+	printf("%s", process_arg("GET", 0, "apple", ""));
+	printf("%s", process_arg("DEL", 0, "banana", ""));
+	printf("%s", process_arg("DEL", 0, "orange", ""));
+	printf("%s", process_arg("HI!", 0, "apple", "blue"));
 	return 0;
 }
 
