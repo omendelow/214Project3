@@ -8,12 +8,15 @@
 #include <netdb.h>
 #include <time.h>
 
+#define BUFSIZE 128
+
 int main(int argc, char **argv)
 {
 	struct addrinfo hints, *info_list, *info;
 	int error;
 	int sock;
-	int i;
+	// int bytes;
+	// char buf[BUFSIZE+1];
 	
 	if (argc < 4) {
 		printf("Usage: %s [host] [port] [message(s)...]\n", argv[0]);
@@ -72,18 +75,26 @@ int main(int argc, char **argv)
 	freeaddrinfo(info_list);
 
 
-	char* message = "SET\n11\nday\nSunday\n";
+	// char* message = "SET\n11\nday\nSunday\n";
+	// write(sock,message,strlen(message));
 
-	write(sock,message,strlen(message));
+	// write(sock, "GET\n6\nh", 7);
+	// sleep(2);
+	// write(sock, "ello\n", 5);
 
-	/*
-	// send the remaining messages to the remote host
-	for (i = 3; i < argc; ++i) {
-		write(sock, argv[i], strlen(argv[i]));
-		sleep(5);
-			// wait 50ms between writes, just to make things interesting
-	}
-	*/
+	// write(sock, "GET\n4", 6);
+	// write(sock, "\nday\n",6);
+	// sleep(3);
+	// write(sock, "SET\n11\nday\nSunday\nGET\n6\na\nb c\n", 31);
+
+	write(sock, "SET\n11\nday\nSunday\n", 18);
+
+	// while ((bytes = read(sock, buf, BUFSIZE)) > 0) {
+	// 	buf[bytes] = '\0';
+	// 	printf("Got %d bytes: |%s|\n", bytes, buf);
+	// }
+
+	
 	
 	// close the socket
 	close(sock);

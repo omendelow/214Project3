@@ -177,7 +177,7 @@ int server(char *port)
 
 void *echo(void *arg)
 {
-	char host[100], port[10], buf[BUFSIZE + 1];
+	char host[100], port[10];
 	struct connection *c = (struct connection *) arg;
 	int error, nread;
 
@@ -196,82 +196,153 @@ void *echo(void *arg)
 
 	printf("[%s:%s] connection\n", host, port);
 	char request_code[4] = "";
+	char request_length_str[10] = "";
 	int request_length = 0;
 	char key[100] = "";
 	char value[100] = "";
 	char curr_char;
-	int is_key = 1;
-	int i;
-	int counter = 0;
-	while ((nread = read(c->fd, buf, BUFSIZE)) > 0) {
-		counter++;
-		buf[nread] = '\0';
-		// check if first iteration
-		if (counter == 1)
-		{
-			if (nread < 8)
-			{
-				// not enough characters pass to fill a complete command
-				printf("error- invalid argument from client\n");
-				close(c->fd);
-				free(c);
-				return NULL;
-			}
+	int i = 0;
+	// int counter = 0;
+	int is_code = 1; //request code not finished
+	int is_length = 1; //request length not finished
+	int is_key = 1; //key not finished
+	int is_value = 1; //value not finished
 
-			// store request code
-			strncpy(request_code, buf, 3);
+	while ((nread = read(c->fd, &curr_char, 1)) > 0) {
+		
+		// build request code
+		if (is_code == 1) {
+			if (curr_char != '\n') {
+				strncat(request_code, &curr_char, 1);
+				continue;
+			}
+			is_code = 0;
 			request_code[3] = '\0'; //string must end in terminator
-
-			// next let's get the request legth
-			i = 4; // request codes are always 3 chars long, +1 for \n and we want to begin after that
-			char request_length_str[10];
-			curr_char = buf[i];
-			while (curr_char != '\n' && i < BUFSIZE)
-			{
-				i++;
-				request_length_str[strlen(request_length_str)] = curr_char;
-				curr_char = buf[i];
-			}
-			request_length_str[strlen(request_length_str)] = '\0';
-			request_length = atoi(request_length_str);
-		}
-		if (i > 0) i++; // skip the \n
-		if (i >= nread)
-		{
 			continue;
 		}
-		for (; i < nread; i++)
-		{
-			curr_char = buf[i];
-			if (curr_char == '\n')
-			{
-				if (is_key == 0 || (strcmp(request_code, "DEL") == 0) || (strcmp(request_code, "GET") == 0))
-				{
-					// we've reached the end of the request
-					counter = 0;
-					// send the request away!
-					printf("request code: %s\n", request_code);
-					printf("request length: %d\n", request_length);
-					printf("key: %s\n", key);
-					printf("value: %s\n", value);
-					break;
-				}
-				else
-				{
-					is_key = 0;
-				}
-				i++;
+		
+		// build request length
+		if (is_length == 1) {
+			if (curr_char != '\n') {
+				strncat(request_length_str, &curr_char, 1);
+				continue;
 			}
-			if (is_key == 1)
-			{
-				strncat(key, &buf[i], 1);
+			is_length = 0;
+			request_length_str[strlen(request_length_str)] = '\0';
+			request_length = atoi(request_length_str);
+			
+			i = request_length;
+			continue;		
+		}
+
+		// build the key
+		if (is_key == 1) {
+			i--;
+			if (curr_char != '\n') {
+				strncat(key, &curr_char, 1);
+				continue;
 			}
-			else
-			{
-				strncat(value, &buf[i], 1);
+			is_key = 0;
+			key[strlen(key)] = '\0';
+			continue;
+		}
+
+		if (strcmp("SET", request_code) == 0) {
+			// build the value
+			if (is_value == 1) {
+				i--;
+				if (curr_char != '\n') {
+					strncat(value, &curr_char, 1);
+					continue;
+				}
+				// is_value = 0;
+				value[strlen(value)] = '\0';
+				if (i != 0) {
+					write(c->fd, "ERR\nLEN\n", 9);
+					exit(EXIT_FAILURE);
+				}
+				is_code = 1;
+				is_length = 1;
+				is_key = 1;
+				is_value = 1;
+
+				char* value_length = malloc(3 * sizeof(char));
+				sprintf(value_length, "%ld", strlen(value)+1);
+				int size = 7 + strlen(value_length) + strlen(value);
+				char* response = malloc(size * sizeof(char));
+				strcpy(response, "OKG\n");	
+				strncat(response, value_length, strlen(value_length));
+				strncat(response, "\n", 1);
+				strncat(response, value, strlen(value));
+				strncat(response, "\n", 1);
+
+				write(c->fd, response, strlen(response));
+				// printf("%s", response);
+
+				free(value_length);
+				free(response);
+				continue;
 			}
 		}
-		i = 0;
+		
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+		// if (curr_char == '\n')
+		// {
+		// 	if (is_key == 0 || (strcmp(request_code, "DEL") == 0) || (strcmp(request_code, "GET") == 0))
+		// 	{
+		// 		// we've reached the end of the request
+		// 		// counter = 0;
+
+		// 		is_key = 1;
+
+		// 		// send the request away!
+		// 		printf("request code: %s\n", request_code);
+		// 		printf("request length: %d\n", request_length);
+		// 		printf("key: %s\n", key);
+		// 		printf("value: %s\n", value);
+
+		// 		//clear key and value
+		// 		memset(key, '\0', sizeof key);
+		// 		memset(value, '\0', sizeof value);
+		// 		break;
+		// 	}
+		// 	else
+		// 	{
+		// 		is_key = 0;
+		// 	}
+		// 	i++;
+		// }
+		// if (is_key == 1)
+		// {
+		// 	strncat(key, &buf[i], 1);
+		// }
+		// else
+		// {
+		// 	strncat(value, &buf[i], 1);
+		// }
+		
+		// //reached the end of buffer
+		// if (i >= BUFSIZ - 1) {
+		// 	i = 0;
+		// 	newRequest = 1;
+		// 	continue;
+		// }
+		
 		/*
 		if (nread < BUFSIZE && request_length == 0)
 		{
