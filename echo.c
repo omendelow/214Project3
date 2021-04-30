@@ -261,100 +261,88 @@ void *echo(void *arg)
 					write(c->fd, "ERR\nLEN\n", 9);
 					exit(EXIT_FAILURE);
 				}
+				
+				write(c->fd, "OKS\n", 5);
+
 				is_code = 1;
 				is_length = 1;
 				is_key = 1;
 				is_value = 1;
 
-				char* value_length = malloc(3 * sizeof(char));
-				sprintf(value_length, "%ld", strlen(value)+1);
-				int size = 7 + strlen(value_length) + strlen(value);
-				char* response = malloc(size * sizeof(char));
-				strcpy(response, "OKG\n");	
-				strncat(response, value_length, strlen(value_length));
-				strncat(response, "\n", 1);
-				strncat(response, value, strlen(value));
-				strncat(response, "\n", 1);
+				memset(request_code, 0, sizeof(request_code));
+				memset(request_length_str, 0, sizeof(request_length_str));
+				memset(key, 0, sizeof(key));
+				// value[0] = '\0';
 
-				write(c->fd, response, strlen(response));
-				// printf("%s", response);
-
-				free(value_length);
-				free(response);
 				continue;
 			}
 		}
-		
 
+		else if (strcmp("GET", request_code) == 0) {
+			
+			char value_length[4] = ""; 
+			sprintf(value_length, "%ld", strlen(value)+1);
+			int size = 7 + strlen(value_length) + strlen(value);
+			char* response = malloc(size * sizeof(char));
+			strcpy(response, "OKG\n");	
+			strncat(response, value_length, strlen(value_length));
+			strncat(response, "\n", 1);
+			strncat(response, value, strlen(value));
+			strncat(response, "\n", 1);
 
+			write(c->fd, response, strlen(response));
+			free(response);
 
+			is_code = 1;
+			is_length = 1;
+			is_key = 1;
+			is_value = 1;
 
+			memset(request_code, 0, sizeof(request_code));
+			memset(request_length_str, 0, sizeof(request_length_str));
+			memset(key, 0, sizeof(key));
 
-
-
-
-
-
-
-
-
-
-
-
-		// if (curr_char == '\n')
-		// {
-		// 	if (is_key == 0 || (strcmp(request_code, "DEL") == 0) || (strcmp(request_code, "GET") == 0))
-		// 	{
-		// 		// we've reached the end of the request
-		// 		// counter = 0;
-
-		// 		is_key = 1;
-
-		// 		// send the request away!
-		// 		printf("request code: %s\n", request_code);
-		// 		printf("request length: %d\n", request_length);
-		// 		printf("key: %s\n", key);
-		// 		printf("value: %s\n", value);
-
-		// 		//clear key and value
-		// 		memset(key, '\0', sizeof key);
-		// 		memset(value, '\0', sizeof value);
-		// 		break;
-		// 	}
-		// 	else
-		// 	{
-		// 		is_key = 0;
-		// 	}
-		// 	i++;
-		// }
-		// if (is_key == 1)
-		// {
-		// 	strncat(key, &buf[i], 1);
-		// }
-		// else
-		// {
-		// 	strncat(value, &buf[i], 1);
-		// }
-		
-		// //reached the end of buffer
-		// if (i >= BUFSIZ - 1) {
-		// 	i = 0;
-		// 	newRequest = 1;
-		// 	continue;
-		// }
-		
-		/*
-		if (nread < BUFSIZE && request_length == 0)
-		{
-			//err
-			printf("error- invalid argument from client\n");
-			close(c->fd);
-			free(c);
-			return NULL;
+			memset(value, 0, sizeof(value));
+			continue;
 		}
-		*/
 
-		//printf("%s\n", buf);
+		else if (strcmp("DEL", request_code) == 0) {
+			
+			char value_length[4] = "";
+			sprintf(value_length, "%ld", strlen(value)+1);
+			int size = 7 + strlen(value_length) + strlen(value);
+			char* response = malloc(size * sizeof(char));
+			strcpy(response, "OKD\n");	
+			strncat(response, value_length, strlen(value_length));
+			strncat(response, "\n", 1);
+			strncat(response, value, strlen(value));
+			strncat(response, "\n", 1);
+
+			write(c->fd, response, strlen(response));
+			free(response);
+
+			is_code = 1;
+			is_length = 1;
+			is_key = 1;
+			is_value = 1;
+
+			memset(request_code, 0, sizeof(request_code));
+			memset(request_length_str, 0, sizeof(request_length_str));
+			memset(key, 0, sizeof(key));
+
+			memset(value, 0, sizeof(value));
+			continue;
+		}
+		
+
+
+
+
+
+
+
+
+
 	}
 
 	printf("[%s:%s] got EOF\n", host, port);
