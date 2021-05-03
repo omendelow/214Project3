@@ -97,7 +97,7 @@ void set(char* key, char* value)
 				return;
 			}
 			// key should have gone before curr_node, error
-			printf("error");
+			//fprintf("error");
 		}
 		curr_node = curr_node->next;
 	}
@@ -357,7 +357,12 @@ int server(char *port)
 		// if we got back -1, it means something went wrong
 		if (con->fd == -1) {
 			perror("accept");
-			continue;
+			//continue;
+			write(con->fd, "ERR\nSRV\n", 9);
+			close(con->fd);
+			free(con);
+			cleanUp();
+			exit(EXIT_FAILURE);
 		}
 		
 		// temporarily block SIGINT (child will inherit mask)
@@ -373,8 +378,11 @@ int server(char *port)
 		// if we couldn't spin off the thread, clean up and wait for another connection
 		if (error != 0) {
 			fprintf(stderr, "Unable to create thread: %d\n", error);
+			write(con->fd, "ERR\nSRV\n", 9);
 			close(con->fd);
 			free(con);
+			cleanUp();
+			exit(EXIT_FAILURE);
 			continue;
 		}
 
@@ -416,7 +424,11 @@ void *echo(void *arg)
 		// flags, in this case saying that we want the port as a number, not a service name
 	if (error != 0) {
 		fprintf(stderr, "getnameinfo: %s", gai_strerror(error));
+		write(c->fd, "ERR\nSRV\n", 9);
 		close(c->fd);
+		free(c);
+		cleanUp();
+		exit(EXIT_FAILURE);
 		return NULL;
 	}
 
@@ -459,6 +471,9 @@ void *echo(void *arg)
 			request_length = atoi(request_length_str);
 			if (!isdigit(request_length) && request_length <= 0) {
 				write(c->fd, "ERR\nBAD\n", 9);
+				close(c->fd);
+				free(c);
+				cleanUp();
 				exit(EXIT_FAILURE);
 			}
 			i = request_length;
@@ -488,6 +503,9 @@ void *echo(void *arg)
 			value[strlen(value)] = '\0';
 			if (i != 0) {
 				write(c->fd, "ERR\nLEN\n", 9);
+				close(c->fd);
+				free(c);
+				cleanUp();
 				exit(EXIT_FAILURE);
 			}
 			
@@ -513,6 +531,9 @@ void *echo(void *arg)
 			// printf("i = %d\n", i);
 			if (i != 0) {
 				write(c->fd, "ERR\nLEN\n", 9);
+				close(c->fd);
+				free(c);
+				cleanUp();
 				exit(EXIT_FAILURE);
 			}
 
@@ -536,6 +557,9 @@ void *echo(void *arg)
 		else {
 			cleanUp();
 			write(c->fd, "ERR\nBAD\n", 9);
+			close(c->fd);
+			free(c);
+			cleanUp();
 			exit(EXIT_FAILURE);
 		}
 
