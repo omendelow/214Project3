@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
+#include <ctype.h>
 #include <unistd.h>
 #include <sys/socket.h>
 #include <sys/types.h>
@@ -448,7 +449,10 @@ void *echo(void *arg)
 			is_length = 0;
 			request_length_str[strlen(request_length_str)] = '\0';
 			request_length = atoi(request_length_str);
-			
+			if (!isdigit(request_length) && request_length <= 0) {
+				write(c->fd, "ERR\nBAD\n", 9);
+				exit(EXIT_FAILURE);
+			}
 			i = request_length;
 			continue;		
 		}
@@ -484,6 +488,7 @@ void *echo(void *arg)
 			
 			print_list();
 
+			free(response);
 			memset(request_code, 0, sizeof(request_code));
 			memset(request_length_str, 0, sizeof(request_length_str));
 			memset(key, 0, sizeof(key));
@@ -525,11 +530,6 @@ void *echo(void *arg)
 			write(c->fd, "ERR\nBAD\n", 9);
 			exit(EXIT_FAILURE);
 		}
-
-
-
-	
-
 
 	}
 
