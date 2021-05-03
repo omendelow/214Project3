@@ -183,12 +183,19 @@ char* process_arg(char* request_code, int request_length, char* key, char* value
 	if (strcmp(request_code, "SET") == 0)
 	{
 		set(key, value);
-		return "OKS\n";
+		char* to_return = malloc(sizeof(char) * 5);
+		snprintf(to_return, 5, "%s", "OKS\n");
+		return to_return;
 	}
 	else if (strcmp(request_code, "GET") == 0)
 	{
 		char* value = get(key);
-		if (value == NULL) return "KNF\n";
+		if (value == NULL)
+		{
+			char* to_return = malloc(sizeof(char) * 5);
+			snprintf(to_return, 5, "%s", "KNF\n");
+			return to_return;
+		} 
 		else
 		{
 			char* to_return = malloc(sizeof(char) * 1024);
@@ -199,7 +206,12 @@ char* process_arg(char* request_code, int request_length, char* key, char* value
 	else if (strcmp(request_code, "DEL") == 0)
 	{
 		char* value = del(key);
-		if (value == NULL) return "KNF\n";
+		if (value == NULL)
+		{
+			char* to_return = malloc(sizeof(char) * 5);
+			snprintf(to_return, 5, "%s", "KNF\n");
+			return to_return;
+		} 
 		else
 		{
 			char* to_return = malloc(sizeof(char) * 1024);
@@ -450,7 +462,7 @@ void *echo(void *arg)
 			}
 			is_key = 0;
 			key[strlen(key)] = '\0';
-			continue;
+			if (strcmp("SET", request_code) == 0) continue;
 		}
 
 		if (strcmp("SET", request_code) == 0) {
@@ -467,13 +479,11 @@ void *echo(void *arg)
 				exit(EXIT_FAILURE);
 			}
 			
-			
 			char* response = process_arg(request_code, request_length, key, value);
 			write(c->fd, response, strlen(response));
 			
 			print_list();
 
-			// free(response);
 			memset(request_code, 0, sizeof(request_code));
 			memset(request_length_str, 0, sizeof(request_length_str));
 			memset(key, 0, sizeof(key));
@@ -498,7 +508,7 @@ void *echo(void *arg)
 			
 			print_list();
 
-			// free(response);
+			free(response);
 			memset(request_code, 0, sizeof(request_code));
 			memset(request_length_str, 0, sizeof(request_length_str));
 			memset(key, 0, sizeof(key));
