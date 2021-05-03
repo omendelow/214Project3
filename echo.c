@@ -21,6 +21,7 @@ typedef struct Node
 }Node;
 
 Node* head = NULL;
+pthread_mutex_t lock;
 
 Node* node(char* key, char* value)
 {
@@ -181,11 +182,13 @@ void cleanUp() {
 
 char* process_arg(char* request_code, int request_length, char* key, char* value)
 {
+	pthread_mutex_lock(&lock);
 	if (strcmp(request_code, "SET") == 0)
 	{
 		set(key, value);
 		char* to_return = malloc(sizeof(char) * 5);
 		snprintf(to_return, 5, "%s", "OKS\n");
+		pthread_mutex_unlock(&lock);
 		return to_return;
 	}
 	else if (strcmp(request_code, "GET") == 0)
@@ -195,12 +198,14 @@ char* process_arg(char* request_code, int request_length, char* key, char* value
 		{
 			char* to_return = malloc(sizeof(char) * 5);
 			snprintf(to_return, 5, "%s", "KNF\n");
+			pthread_mutex_unlock(&lock);
 			return to_return;
 		} 
 		else
 		{
 			char* to_return = malloc(sizeof(char) * 1024);
 			snprintf(to_return, 1024, "OKG\n%d\n%s\n", (int)strlen(value)+1, value);
+			pthread_mutex_unlock(&lock);
 			return to_return;
 		}
 	}
@@ -211,6 +216,7 @@ char* process_arg(char* request_code, int request_length, char* key, char* value
 		{
 			char* to_return = malloc(sizeof(char) * 5);
 			snprintf(to_return, 5, "%s", "KNF\n");
+			pthread_mutex_unlock(&lock);
 			return to_return;
 		} 
 		else
@@ -218,6 +224,7 @@ char* process_arg(char* request_code, int request_length, char* key, char* value
 			char* to_return = malloc(sizeof(char) * 1024);
 			snprintf(to_return, 1024, "OKD\n%d\n%s\n", (int)strlen(value)+1, value);
 			free(value);
+			pthread_mutex_unlock(&lock);
 			return to_return;
 		}
 	}
@@ -225,6 +232,7 @@ char* process_arg(char* request_code, int request_length, char* key, char* value
 	{
 		// invalid request
 		cleanUp();
+		pthread_mutex_unlock(&lock);
 		return "ERR\nBAD\n";
 	}
 }
@@ -247,7 +255,7 @@ int main(int argc, char **argv)
 		printf("Usage: %s [port]\n", argv[0]);
 		exit(EXIT_FAILURE);
 	}
-
+	pthread_mutex_init(&lock, NULL);
 	(void) server(argv[1]);
 	return EXIT_SUCCESS;
 }
