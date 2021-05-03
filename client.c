@@ -15,8 +15,8 @@ int main(int argc, char **argv)
 	struct addrinfo hints, *info_list, *info;
 	int error;
 	int sock;
-	// int bytes;
-	// char buf[BUFSIZE+1];
+	int bytes;
+	char buf[BUFSIZE+1];
 	
 	if (argc < 4) {
 		printf("Usage: %s [host] [port] [message(s)...]\n", argv[0]);
@@ -75,26 +75,29 @@ int main(int argc, char **argv)
 	freeaddrinfo(info_list);
 
 
-	// char* message = "SET\n11\nday\nSunday\n";
-	// write(sock,message,strlen(message));
+	char* message = "SET\n11\nday\nSunday\n";
+	write(sock,message,strlen(message));
 
-	// write(sock, "GET\n6\nh", 7);
-	// sleep(2);
-	// write(sock, "ello\n", 5);
-
-	// write(sock, "GET\n4", 6);
-	// write(sock, "\nday\n",6);
-	// sleep(3);
+	write(sock, "GET\n6\nh", 7);
+	sleep(1);
+	write(sock, "ello\n", 5);
+	
+	write(sock, "GET\n4", 6);
+	sleep(1);
+	write(sock, "\nday\n",6);
+	// sleep(1);
 	// write(sock, "SET\n11\nday\nSunday\nGET\n6\na\nb c\n", 31);
 
-	write(sock, "SET\n11\nday\nSunday\n", 18);
+	// write(sock, "SET\n6\na\nb c\n", 13);
 
-	// while ((bytes = read(sock, buf, BUFSIZE)) > 0) {
-	// 	buf[bytes] = '\0';
-	// 	printf("Got %d bytes: |%s|\n", bytes, buf);
-	// }
+	// write(sock, "GET\n4\nday\n", 11);
 
-	
+	while ((bytes = read(sock, buf, BUFSIZE)) > 0) {
+		buf[bytes] = '\0';
+		printf("%s", buf);
+		// printf("Got %d bytes: |%s|\n", bytes, buf);
+	}
+
 	
 	// close the socket
 	close(sock);
