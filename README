@@ -1,5 +1,29 @@
 Akshar Patel aap279
 Oren Mendelow om144
 
-TO INCLUDE: 
-A brief description of your testing strategy. How did you determine that your program is correct? What sorts of files and scenarios did you check?
+In order to ensure the program is robust, we tested it at every stage of the production process.
+
+Data Structure:
+	To maintain key-value pairs, we utilized a singly linked list maintained in lexicographical order. To test the data structure, we mapped out all edge case scenarios and ran tests that put the code to its limits.
+
+Server:
+	Testing the server was done by passing valid and invalid arguments, connecting numerous clients, and putting stress on it by sending/receiving numerous requests simultaneously.
+
+Client:
+	Clients were tested by running commands through them, ensuring they received the proper response from the server and reacted accordingly, especially while other clients were running.
+
+Locking list:
+	To make sure two server threads didn't try to access the list simultaneously we utilized the pthread mutex lock. Testing this required running numerous clients simultaneously, coded and nc.
+
+Scenarios:
+	Deleting from an empty list
+	Adding to a list in non-lexographical order
+	Accessing the same key on simultaneous clients
+	Editing an existing key
+	Adding 100+ items to the list
+	Deleting a key
+	Server termination on connection closing
+	Client back-and-forth with server
+	Waiting for responses
+	Errors - KNF, ERR- BAD, LEN, SRV
+	Parsing commands and differentiating between SET and GET, DEL
