@@ -107,6 +107,7 @@ void set(char* key, char* value)
 
 char* del(char* key)
 {
+	if (head == NULL) return NULL;
 	Node* curr_node = head;
 	int counter = 0;
 	while (curr_node->next != NULL)
@@ -433,7 +434,7 @@ void *echo(void *arg)
 	}
 
 	printf("[%s:%s] connection\n", host, port);
-	char request_code[4] = "";
+	char request_code[100] = "";
 	char request_length_str[10] = "";
 	int request_length = 0;
 	char key[100] = "";
@@ -451,13 +452,21 @@ void *echo(void *arg)
 		// build request code
 		if (is_code == 1) {
 			if (curr_char != '\n') {
-				if (strlen(request_code) > 2) exit(EXIT_FAILURE);
 				strncat(request_code, &curr_char, 1);
 				continue;
 			}
 			is_code = 0;
-			request_code[3] = '\0'; //string must end in terminator
-			continue;
+			request_code[strlen(request_code)] = '\0'; //string must end in terminator
+			if (strcmp(request_code, "SET") == 0 || strcmp(request_code, "GET") == 0 || strcmp(request_code, "DEL") == 0) {
+				continue;
+			}
+			else {
+				write(c->fd, "ERR\nBAD\n", 9);
+				close(c->fd);
+				free(c);
+				cleanUp();
+				exit(EXIT_FAILURE);
+			}
 		}
 		
 		// build request length
@@ -512,7 +521,7 @@ void *echo(void *arg)
 			char* response = process_arg(request_code, request_length, key, value);
 			write(c->fd, response, strlen(response));
 			
-			print_list();
+			// print_list();
 
 			free(response);
 			memset(request_code, 0, sizeof(request_code));
@@ -540,7 +549,7 @@ void *echo(void *arg)
 			char* response = process_arg(request_code, request_length, key, value);
 			write(c->fd, response, strlen(response));
 			
-			print_list();
+			// print_list();
 
 			free(response);
 			memset(request_code, 0, sizeof(request_code));
